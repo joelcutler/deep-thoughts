@@ -6,6 +6,7 @@ import {
   ApolloProvider,
   createHttpLink,
 } from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -21,8 +22,19 @@ const httpLink = createHttpLink({
   uri: "/graphql",
 });
 
+const authLink = setContext((_, { headers }) => {
+  // Because we're not using the first parameter, but we still need to access the second one, we can use an underscore _ to serve as a placeholder for the first parameter.
+  const token = localStorage.getItem("id_token");
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+});
+
 const client = new ApolloClient({
-  link: httpLink,
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
 });
 
@@ -38,6 +50,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:username" element={<Profile />} />
               <Route path="/thought/:id" element={<SingleThought />} />
               <Route path="*" element={<NoMatch />} />
             </Routes>
